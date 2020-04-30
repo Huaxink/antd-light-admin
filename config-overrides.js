@@ -62,6 +62,7 @@ module.exports = override(
         ['syntax-dynamic-import', { legacy: true }]
     ),
     (config, env) => {
+        // 自定义全局变量，不可注释，会报错！！！
         config.plugins = [...config.plugins, new webpack.DefinePlugin({
             'PUBLIC_PATH': JSON.stringify(config.output.publicPath)
         })];
