@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { DatePicker, Button, Upload, Spin, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
+import Qrcode from '@/components/Qrcode';
 import { formatImgs } from '@/utils/utils';
 import './index.less';
 
@@ -76,6 +77,15 @@ export default class Dashboard extends Component {
                         }
                     </Spin>
                 </Dragger>
+                <div className="text-center mt10">二维码组件：</div>
+                <div style={{ margin: '20px auto', width: '200px' }}>
+                    <Qrcode
+                        qrUrl="https://github.com/Huaxink/antd-light-admin"
+                        qrText="Antd Ligth Admin"
+                        qrTextSize={16}
+                        qrLogo={`${window.PUBLIC_PATH}logo.png`}
+                    />
+                </div>
             </div>
         );
     }

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import './index.less';
-import { Descriptions, Skeleton, message, Switch, Spin, Tag, Input, Modal, Table, Button, Form } from 'antd';
+import { Descriptions, Skeleton, message, Switch, Spin, Tag, Input, Modal, Table, Button, Form, Radio } from 'antd';
 import { PlusOutlined, EditOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { observer, inject } from 'mobx-react';
 
@@ -55,6 +55,7 @@ class Setting extends Component {
             staffList: [],
             curStaff: {},
             showStaffModel: false,
+            showRole: false,
             cloumns: [
                 {
                     title: '登录账号',
@@ -89,7 +90,8 @@ class Setting extends Component {
                     dataIndex: 'option',
                     render: (text, record) => (
                         <div>
-                            <Button size="small" type="link">修改登录密码</Button>
+                            <Button size="small" type="link" onClick={() => this.showRoleModal(record)}>修改角色，测试权限</Button>
+                            <Button size="small" type="link" onClick={() => this.showRoleModal(record)}>修改密码</Button>
                         </div>
                     )
                 }
@@ -111,9 +113,21 @@ class Setting extends Component {
         });
     }
 
+    showRoleModal(staff) {
+        const { appStore } = this.props;
+        const { role } = appStore;
+        this.setState({ curStaff: { ...staff, role }, showRole: true });
+    }
+
+    showPasswordModal(staff) {
+        this.setState({ curStaff: { ...staff }, showStaffModel: true });
+    }
+
     getStaffList() {
+        const { appStore } = this.props;
+        const { role } = appStore;
         this.setState({
-            staffList: [{ id: 1, key: 1, staff_name: '小哈哈', username: 'xhh', role_name: '管理员', status: '正常' }]
+            staffList: [{ id: 1, key: 1, staff_name: '小哈哈', username: 'xhh', role_name: '管理员', status: '正常', role }]
         });
     }
 
@@ -161,6 +175,10 @@ class Setting extends Component {
                 _this.cancelPassword();
             }
         });
+    }
+
+    cancelPassword() {
+        this.setState({ showStaffModel: false });
     }
 
     handleRemoveProp(key, item) {
@@ -224,6 +242,29 @@ class Setting extends Component {
         this.handleInputBlur(key);
     }
 
+    onChangeRole(e) {
+        const { value } = e.target;
+        const { curStaff } = this.state;
+        curStaff.role = value;
+        this.setState({ curStaff });
+    }
+
+    confirmChangeRole() {
+        const { curStaff } = this.state;
+        const { appStore } = this.props;
+        appStore.changeRole(curStaff.role);
+        this.setState({ showRole: false, loading: true });
+        setTimeout(() => {
+            message.success(curStaff.role ? '权限页有了' : '权限页没了');
+            appStore.changeRole(curStaff.role);
+            this.setState({ loading: false });
+        }, 500);
+    }
+
+    cancelChangeRole() {
+        this.setState({ showRole: false });
+    }
+
     componentDidMount() {
         this.getShopInfo();
         this.getStaffList();
@@ -235,7 +276,7 @@ class Setting extends Component {
             inputColorVisible, inputColorValue,
             inputKindVisible, inputKindValue,
             curStaff, showStaffModel,
-            cloumns, staffList } = this.state;
+            cloumns, staffList, showRole } = this.state;
         if (!shopInfo) {
             return (
                 <div>
@@ -380,6 +421,20 @@ class Setting extends Component {
                     title={`修改【${curStaff.staff_name}】登录密码`}
                 >
                     <PasswordForm props={{ parent: this }} />
+                </Modal>
+                <Modal
+                    title={`修改【${curStaff.staff_name}】角色`}
+                    visible={showRole}
+                    destroyOnClose
+                    closable={false}
+                    maskClosable
+                    onOk={() => this.confirmChangeRole()}
+                    onCancel={() => this.cancelChangeRole()}
+                >
+                    <Radio.Group onChange={(e) => this.onChangeRole(e)} value={curStaff.role}>
+                        <Radio value={0}>普工</Radio>
+                        <Radio value={1}>管理员</Radio>
+                    </Radio.Group>
                 </Modal>
             </div>
         );

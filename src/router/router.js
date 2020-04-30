@@ -1,5 +1,5 @@
 import React from 'react';
-import { HomeOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { Redirect, Route, Switch } from 'react-router-dom';
 import Dashboard from '@/pages/Dashboard';
 import DressDetail from '@/pages/DressDetail';
@@ -12,7 +12,10 @@ export const routeConfig = {
             path: '/dashboard', exact: true, icon: <HomeOutlined style={{ marginRight: '18px' }} />, component: Dashboard, extraProps: { title: '工作台' }
         },
         {
-            path: '/setting', auth: [1], exact: true, component: loadable(() => import(/* webpackChunkName: "addDress" */'@/pages/Setting')), extraProps: { hide: true }
+            path: '/auth', auth: [1], exact: true, icon: <FileSearchOutlined style={{ marginRight: '18px' }} />, component: loadable(() => import(/* webpackChunkName: "auth" */'@/pages/Auth')), extraProps: { title: '权限页' }
+        },
+        {
+            path: '/setting', exact: true, component: loadable(() => import(/* webpackChunkName: "addDress" */'@/pages/Setting')), extraProps: { hide: true }
         },
         { path: '/detail/:number', exact: true, component: DressDetail },
         { url: '/dashboard', redirect: true, extraProps: { hide: true } }
@@ -65,7 +68,7 @@ export const renderRoutes = (
                 {mapFunc(routes)}
             </Switch>
         );
-        // 将非Switch包裹的Route挂载到Switch节点之前，不过感觉没啥用
+        // 将非Switch包裹的Route挂载到Switch节点之前
         multipleRoutes && list.unshift(...mapFunc(multipleRoutes));
         // 返回一个数组，比如 [<Route/>,...,<Route/>,<Switch>...</Switch>]
         return list;

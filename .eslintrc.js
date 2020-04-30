@@ -24,6 +24,7 @@ module.exports = {
         "react"
     ],
     rules: {
+        'linebreak-style': [0], // 换行符的问题
         "camelcase": 0,
         "import/no-extraneous-dependencies": 0,
         "import/extensions": [0],

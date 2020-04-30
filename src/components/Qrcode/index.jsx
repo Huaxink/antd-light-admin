@@ -12,46 +12,93 @@ class Qrcode extends Component {
         /** 父组件传递参数
 		 * @argument qrUrl        二维码内容
 		 * @argument qrSize       二维码大小(默认200)
-		 * @argument qrText       二维码中间显示文字
-		 * @argument qrTextSize   二维码中间显示文字大小(默认16px)
-		 * @argument qrLogo       二维码中间显示图片
+		 * @argument qrText       二维码下方示文字
+         * @argument qrTextSize   二维码下方显示文字大小(默认40px)
+         * @argument qrLogo       二维码中间显示图片
 		 * @argument qrLogoSize   二维码中间显示图片大小(默认为40)
 		 */
         super(props); // 当父组件向子组件传递数据时，需要在这里传入props。
-        props.qrSize = props.qrSize || 200; // 二维码大小默认值
-        props.qrTextSize = props.qrTextSize || 40; // 中间字体默认值
-        props.qrLogoSize = props.qrLogoSize || 40; // 中间二维码图片默认值
-        this.state = {}; // 通过state来定义当前组件内部自己的数据
+        this.initProps = { ...props };
+        this.state = {
+            qrUrl: props.qrUrl || '',
+            qrSize: props.qrSize || 200,
+            qrText: props.qrText || '',
+            qrLogo: props.qrLogo || '',
+            qrTextSize: props.qrTextSize || 40,
+            qrLogoSize: props.qrLogoSize || 40
+        };
     }
 
-    componentDidMount = () => {
+    componentDidMount() {
         this.renderImage();
     }
 
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        if (prevProps.qrUrl !== this.props.qrUrl) {
-            this.renderImage();
-        }
+    static getDerivedStateFromProps(props, state) {
+        return null;
+    }
+
+    render() {
+        return (
+            <div className="Qrcode">
+                <div className="qrcode_box">
+                    <img className="qrcode_img" crossOrigin="Anonymous" ref={(qrcode_img) => { this.qrcode_img = qrcode_img; }} alt="二维码图片" />
+                    <img className="qrcode_logo" crossOrigin="Anonymous" ref={(qrcode_logo) => { this.qrcode_logo = qrcode_logo; }} alt="二维码logo" />
+                    <canvas className="canvas" ref={(canvas) => { this.canvas = canvas; }} />
+                </div>
+            </div>
+        );
     }
 
     renderImage() {
         // 画二维码里的logo[注意添加logo图片的时候需要在父组件中引入图片]
-        const { qrcode_canvas } = this; // 最终存放二维码图片的标签
-        const { canvas } = this;
+        const { qrcode_img, qrcode_logo, canvas, initProps } = this;
+        const { qrUrl, qrText, qrLogo, qrSize, qrTextSize } = this.state;
         this.handleCanvasBlurProblem(canvas);
-        const opt = { errorCorrectionLevel: 'H', ...this.props.options };
-        QRCode.toDataURL(this.props.qrUrl, opt, (err, url) => {
-            qrcode_canvas.src = url;
+        const { realQrSize, pixRatio, realQrTextSize } = this;
+        if (!canvas || !pixRatio) return;
+
+        if (qrText) {
+            // 如果有文字，就要重新计算canvas画布高度
+            canvas.height = realQrSize + realQrTextSize;
+            canvas.style.height = `${qrSize + qrTextSize}`;
+        }
+        // QRCode里自己默认设置了4倍图
+        const opt = { type: 'image/jpeg', width: realQrSize, errorCorrectionLevel: 'H' };
+        QRCode.toDataURL(qrUrl, opt).then(async (url) => {
+            qrcode_img.src = url;
+            await this.loadImg(qrcode_img);
             const ctx = canvas.getContext('2d');
-            setTimeout(() => { // 画二维码里的logo或文本 在canvas里进行拼接
-                ctx.drawImage(qrcode_canvas, 0, 0, this.qrSize, this.qrSize); // 获取图片
-                if (this.props.qrLogo) this.setQrcodeImg(ctx); // 如果传了qrLogo则设置中间图片
-                else if (this.props.qrText) this.setQrcodeText(ctx); // 如果传了qrText则设置中间文本
-                canvas.style.display = 'none'; // 隐藏掉convas
-                qrcode_canvas.src = canvas.toDataURL(); // 显示二维码图片标签
-                qrcode_canvas.style.display = 'inline-block';
-                this.props.afterDraw && this.props.afterDraw(qrcode_canvas.src, this.props.qrText || '');
-            }, 300);
+            ctx.drawImage(qrcode_img, 0, 0, realQrSize, realQrSize); // 获取图片
+
+            if (qrLogo) {
+                // 画二维码里的logo或文本 在canvas里进行拼接
+                // 如果传了qrLogo则设置中间图片
+                qrcode_logo.src = qrLogo;
+                await this.loadImg(qrcode_logo);
+                this.setQrcodeImg(ctx);
+            }
+            if (qrText) {
+                // 如果传了qrText则设置中间文本
+                this.setQrcodeText(ctx);
+            }
+            qrcode_img.src = canvas.toDataURL(); // 显示二维码图片标签
+            canvas.style.display = 'none'; // 隐藏掉canvas
+            qrcode_logo.style.display = 'none'; // 隐藏掉logopng
+            qrcode_img.style.display = 'block';
+            initProps.afterDraw && initProps.afterDraw(qrcode_img.src, qrText || '');
+        });
+    }
+
+    // 加载图片
+    loadImg(img) {
+        return new Promise((resolve, reject) => {
+            if (!img.src) {
+                resolve(false);
+                return;
+            }
+            img.onload = (e) => {
+                resolve(e);
+            };
         });
     }
 
@@ -59,21 +106,22 @@ class Qrcode extends Component {
 	 * 在二维码下面加文本
 	 */
     setQrcodeText = (ctx) => {
-        ctx.font = `bold ${this.qrTextSize}px Arial`;
-        const tw = ctx.measureText(this.props.qrText).width; // 文字真实宽度
-        const ftop = this.qrSize; // 根据字体大小计算文字top
-        const fleft = (this.qrSize - tw) / 2; // 根据字体大小计算文字left
-        const tp = this.qrTextSize; // 字体边距为字体大小的一半可以自己设置
+        const { realQrSize, realQrTextSize } = this;
+        ctx.font = `bold ${realQrTextSize}px Arial`;
+        const text = this.state.qrText;
+        const tw = ctx.measureText(text).width; // 文字真实宽度
+        const ftop = realQrSize;
+        const fleft = (realQrSize - tw) / 2; // 根据字体大小计算文字left
         ctx.fillStyle = '#fff';
         ctx.fillRect(
             0,
             ftop,
-            this.qrSize,
-            this.qrTextSize + tp
+            realQrSize,
+            realQrTextSize
         );
         ctx.textBaseline = 'top'; // 设置绘制文本时的文本基线。
         ctx.fillStyle = '#000';
-        ctx.fillText(this.props.qrText, fleft, ftop);
+        ctx.fillText(text, fleft, ftop);
     }
 
     /**
@@ -83,9 +131,9 @@ class Qrcode extends Component {
         const { qrcode_logo } = this; // logo图片的标签
         ctx.fillStyle = '#fff'; // 设置获取的logo将其变为圆角以及添加白色背景
         ctx.beginPath();
-        const logoPosition = (this.props.qrSize - this.props.qrLogoSize) / 2; // logo相对于canvas居中定位
-        const h = this.props.qrLogoSize + 10; // 圆角高 10为基数(logo四周白色背景为10/2)
-        const w = this.props.qrLogoSize + 10; // 圆角宽
+        const logoPosition = (this.realQrSize - this.realQrLogoSize) / 2; // logo相对于canvas居中定位
+        const h = this.realQrLogoSize + 10; // 圆角高 10为基数(logo四周白色背景为10/2)
+        const w = this.realQrLogoSize + 10; // 圆角宽
         const x = logoPosition - 5;
         const y = logoPosition - 5;
         const r = 5; // 圆角半径
@@ -100,20 +148,8 @@ class Qrcode extends Component {
             qrcode_logo,
             logoPosition,
             logoPosition,
-            this.props.qrLogoSize,
-            this.props.qrLogoSize
-        );
-    }
-
-    render() {
-        return (
-            <div id="Qrcode">
-                <div className="qrcode_box">
-                    <img className="qrcode_canvas" id="qrcode_canvas" ref={(qrcode_canvas) => { this.qrcode_canvas = qrcode_canvas; }} alt="二维码图片" />
-                    <img className="qrcode_logo" ref={(qrcode_logo) => { this.qrcode_logo = qrcode_logo; }} src={this.props.qrLogo} alt="二维码logo" />
-                    <canvas width={this.props.qrSize} height={this.props.qrSize + this.props.qrTextSize} className="canvas" ref={(canvas) => { this.canvas = canvas; }} />
-                </div>
-            </div>
+            this.realQrLogoSize,
+            this.realQrLogoSize
         );
     }
 
@@ -137,17 +173,18 @@ class Qrcode extends Component {
     handleCanvasBlurProblem(canvas) {
         const ctx = canvas.getContext('2d');
         const per = this.getPixelRatio(ctx);
-
-        const h = canvas.height;
-        const w = canvas.width;
+        const { qrSize, qrTextSize, qrLogoSize } = this.state;
+        const h = qrSize;
+        const w = qrSize;
 
         canvas.height = h * per;
         canvas.width = w * per;
         canvas.style.height = `${h}px`;
         canvas.style.width = `${w}px`;
-
-        this.qrSize = this.props.qrSize * per;
-        this.qrTextSize = this.props.qrTextSize * per;
+        this.pixRatio = per;
+        this.realQrSize = qrSize * per;
+        this.realQrTextSize = qrTextSize * per;
+        this.realQrLogoSize = qrLogoSize * per;
     }
 }
 

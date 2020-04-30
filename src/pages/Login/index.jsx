@@ -19,7 +19,7 @@ export default (props) => {
             appStore.changeRole(1);
             appStore.changeName('小哈哈');
             appStore.changeToken('123456');
-        }, 3000);
+        }, 1000);
     };
 
     return (
@@ -38,7 +38,7 @@ export default (props) => {
                             name="username"
                             rules={[{ required: true, message: '请输入登录账号!' }]}
                         >
-                            <Input prefix={<UserOutlined className="site-form-item-icon" />} placeholder="请输入登录账号" size="large" />
+                            <Input prefix={<UserOutlined className="site-form-item-icon" />} placeholder="随便输" size="large" />
                         </Form.Item>
                         <Form.Item
                             name="password"
@@ -48,7 +48,7 @@ export default (props) => {
                                 size="large"
                                 prefix={<LockOutlined className="site-form-item-icon" />}
                                 type="password"
-                                placeholder="请输入登录密码"
+                                placeholder="随便输"
                                 onPressEnter={checkForm}
                             />
                         </Form.Item>

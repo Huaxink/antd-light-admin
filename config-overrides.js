@@ -41,7 +41,7 @@ module.exports = override(
         })
     ]),
     removeManifest(),
-    useEslintRc(path.resolve(__dirname, ".eslintrc.js")),
+    useEslintRc(path.resolve(__dirname, ".eslintrc.js")), // 这个是控制eslint检查的配置，如果不想用就直接注释掉
     addDecoratorsLegacy(), // 装饰器
     addWebpackAlias({
         ["@"]: path.resolve(__dirname, "src")

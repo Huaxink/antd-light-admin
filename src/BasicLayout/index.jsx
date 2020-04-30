@@ -24,7 +24,7 @@ class BasicLayout extends Component {
     };
 
     shopSetting = () => {
-        this.props.history.replace('/setting');
+        this.props.history.push('/setting');
     }
 
     handleLogout = () => {
@@ -78,15 +78,13 @@ class BasicLayout extends Component {
 
         const menu = (
             <Menu>
-                {realRole === 1 && (
-                    <Menu.Item onClick={() => this.shopSetting()}>
-                        <div className="pl-6 pr-6">
-                            <SettingOutlined />
-                            {' '}
-                            <span className="ml5">店铺设置</span>
-                        </div>
-                    </Menu.Item>
-                )}
+                <Menu.Item onClick={() => this.shopSetting()}>
+                    <div className="pl-6 pr-6">
+                        <SettingOutlined />
+                        {' '}
+                        <span className="ml5">店铺设置</span>
+                    </div>
+                </Menu.Item>
                 <Menu.Item onClick={() => this.handleLogout()} style={{ borderTop: '1px solid #eee' }}>
                     <div className="pl-6 pr-6">
                         <LogoutOutlined />
